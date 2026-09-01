@@ -1,0 +1,10 @@
+{
+  "name": "SRTMUN CONNECT",
+  "description": "University Information Assistant for Swami Ramanand Teerth Marathwada University (SRTMUN), Vishnupuri, Nanded",
+  "requestFramePermissions": [
+    "microphone"
+  ],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}
