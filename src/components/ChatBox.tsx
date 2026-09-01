@@ -137,8 +137,7 @@ export const ChatBox: React.FC<ChatBoxProps> = ({
 
       if (!res.ok) {
         throw new Error(`Server returned error ${res.status}`);
-      }$env:Path += ";C:\Program Files\Git\cmd"
-
+      }
       const data = await res.json();
       const botResponse =
   data.answer ||
