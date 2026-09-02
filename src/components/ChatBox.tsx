@@ -140,8 +140,7 @@ export const ChatBox: React.FC<ChatBoxProps> = ({
       }
       const data = await res.json();
       const botResponse =
-  data.answer ||
-  (language === 'MR'
+data.reply ||  (language === 'MR'
     ? 'माहिती उपलब्ध नाही.'
     : language === 'HI'
     ? 'जानकारी उपलब्ध नहीं है।'
