@@ -126,8 +126,7 @@ export const ChatBox: React.FC<ChatBoxProps> = ({
         queryLang = detected === 'mr' ? 'marathi' : detected === 'hi' ? 'hindi' : 'english';
       }
 
-      const res = await fetch('/api/ai/chat', {
-        method: 'POST',
+fetch('https://srtmun-connect-1.onrender.com/api/ai/chat', {        method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           message: textToSend.trim(),
