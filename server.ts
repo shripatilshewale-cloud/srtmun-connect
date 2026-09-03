@@ -1,6 +1,8 @@
 import "dotenv/config";
 import express from "express";
 import cors from "cors";
+import path from "path";
+import { fileURLToPath } from "url";
 import { GoogleGenAI } from "@google/genai";
 
 const app = express();
@@ -8,11 +10,21 @@ const app = express();
 const PORT = Number(process.env.PORT) || 3000;
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
 
-app.use(cors({
-  origin: "*",
-  methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-  allowedHeaders: ["Content-Type", "Authorization"],
-}));
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+// --------------------------------------------------
+// Middleware
+// --------------------------------------------------
+
+app.use(
+  cors({
+    origin: "*",
+    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization"],
+  })
+);
+
 app.use(express.json({ limit: "1mb" }));
 
 // --------------------------------------------------
@@ -104,15 +116,11 @@ ${selectedLanguage}
 If selected language is Marathi:
 - Answer completely in natural Marathi.
 - Use Devanagari script.
-- Do NOT translate the whole answer into English.
-- Do NOT answer only the course name in English.
-- Marathi sentences must remain Marathi.
 - English technical terms such as BCA, MCA, HTML, JavaScript, etc. may remain in English when appropriate.
 
 If selected language is Hindi:
 - Answer completely in natural Hindi.
 - Use Devanagari script.
-- Do NOT answer in English.
 - English technical terms may remain in English when appropriate.
 
 If selected language is English:
@@ -123,18 +131,6 @@ Always answer the complete question.
 Do not give only keywords.
 Do not give only the course name.
 Do not shorten the answer unnecessarily.
-
-For example, if the user asks:
-
-"BCA म्हणजे काय?"
-
-A good Marathi answer is:
-
-"BCA म्हणजे Bachelor of Computer Applications. हा संगणक आणि सॉफ्टवेअर क्षेत्राशी संबंधित पदवी अभ्यासक्रम आहे. या अभ्यासक्रमामध्ये Programming, Database, Web Development आणि Computer Applications यांसारख्या विषयांचा अभ्यास केला जातो."
-
-Do NOT answer only:
-
-"BCA, School of Computational Sciences."
 
 If exact university-specific information is not available,
 say clearly that the information should be verified from the official
@@ -154,8 +150,12 @@ Keep answers useful and easy to understand.
 app.get("/api/health", (_req, res) => {
   res.json({
     success: true,
-    message: "SRTMUN Connect backend is running",
+    status: "ok",
+    service: "SRTMUN CONNECT API",
+    university:
+      "Swami Ramanand Teerth Marathwada University, Nanded",
     geminiConfigured: Boolean(GEMINI_API_KEY),
+    timestamp: new Date().toISOString(),
   });
 });
 
@@ -167,7 +167,6 @@ app.post("/api/ai/chat", async (req, res) => {
   try {
     const { message, language } = req.body;
 
-    // Validate message
     if (
       typeof message !== "string" ||
       message.trim().length === 0
@@ -180,7 +179,6 @@ app.post("/api/ai/chat", async (req, res) => {
 
     const selectedLanguage = normalizeLanguage(language);
 
-    // Check Gemini API
     if (!ai) {
       return res.status(503).json({
         success: false,
@@ -197,22 +195,18 @@ app.post("/api/ai/chat", async (req, res) => {
       `[SRTMUN CONNECT] AI request | language=${selectedLanguage}`
     );
 
-    // Generate Gemini response
     const response = await ai.models.generateContent({
       model: "gemini-2.5-flash",
       contents: message.trim(),
       config: {
-        systemInstruction: createSystemInstruction(
-          selectedLanguage
-        ),
+        systemInstruction:
+          createSystemInstruction(selectedLanguage),
         temperature: 0.4,
         maxOutputTokens: 1500,
       },
     });
 
-    const answer =
-      response.text?.trim() ||
-      "";
+    const answer = response.text?.trim() || "";
 
     if (!answer) {
       return res.status(502).json({
@@ -231,6 +225,7 @@ app.post("/api/ai/chat", async (req, res) => {
       message: message.trim(),
       language: selectedLanguage,
       answer,
+      reply: answer,
     });
   } catch (error) {
     console.error(
@@ -242,7 +237,8 @@ app.post("/api/ai/chat", async (req, res) => {
       req.body?.language
     );
 
-    let errorMessage = "AI service is temporarily unavailable.";
+    let errorMessage =
+      "AI service is temporarily unavailable.";
 
     if (language === "mr") {
       errorMessage =
@@ -262,7 +258,7 @@ app.post("/api/ai/chat", async (req, res) => {
 });
 
 // --------------------------------------------------
-// 404 API handler
+// API 404 handler
 // --------------------------------------------------
 
 app.use("/api", (_req, res) => {
@@ -270,6 +266,19 @@ app.use("/api", (_req, res) => {
     success: false,
     error: "API endpoint not found.",
   });
+});
+
+// --------------------------------------------------
+// Serve React frontend
+// --------------------------------------------------
+
+const distPath = path.join(__dirname, "dist");
+
+app.use(express.static(distPath));
+
+// React SPA fallback
+app.use((_req, res) => {
+  res.sendFile(path.join(distPath, "index.html"));
 });
 
 // --------------------------------------------------
