@@ -10,8 +10,8 @@ const app = express();
 const PORT = Number(process.env.PORT) || 3000;
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+import { fileURLToPath } from "url";
+const __dirname = process.cwd();
 
 // --------------------------------------------------
 // Middleware
