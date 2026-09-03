@@ -50,8 +50,12 @@ if (GEMINI_API_KEY) {
 type Language = "en" | "mr" | "hi";
 
 function normalizeLanguage(language: unknown): Language {
-  if (language === "mr") return "mr";
-  if (language === "hi") return "hi";
+  const value = String(language ?? "").toLowerCase().trim();
+
+  if (value === "mr" || value === "marathi") return "mr";
+  if (value === "hi" || value === "hindi") return "hi";
+  if (value === "en" || value === "english") return "en";
+
   return "en";
 }
 
