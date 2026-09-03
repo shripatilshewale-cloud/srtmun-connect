@@ -4,6 +4,7 @@
  * Supports Marathi (mr-IN), Hindi (hi-IN), and English (en-IN)
  */
 
+import { TextToSpeech } from '@capacitor-community/text-to-speech';
 export type SupportedLang = 'en' | 'mr' | 'hi' | 'EN' | 'MR' | 'HI' | 'english' | 'marathi' | 'hindi';
 
 export interface VoiceDiagnosticInfo {
@@ -305,6 +306,24 @@ export function speakFullResponse(
   onEnd?: () => void,
   onError?: (err: Error | string) => void
 ): boolean {
+  if (typeof window !== 'undefined' && (window as any).Capacitor?.isNativePlatform?.()) {
+  TextToSpeech.speak({
+    text: cleanTextForSpeech(text),
+    lang: getSpeechLangCode(language),
+    rate: 0.9,
+    pitch: 1.0,
+    volume: 1.0,
+  })
+    .then(() => {
+      if (onEnd) onEnd();
+    })
+    .catch((err) => {
+      console.error('Native Android TTS error:', err);
+      if (onError) onError(err);
+    });
+
+  return true;
+}
   if (typeof window === 'undefined' || !('speechSynthesis' in window)) {
     const errMsg = 'Speech synthesis is not supported in this browser environment.';
     console.warn(errMsg);
